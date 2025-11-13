@@ -1,16 +1,16 @@
+
 enum UserRole {
-    PATIENT
-    DOCTOR
-    ADMIN
+  PATIENT
+  DOCTOR
+  ADMIN
 }
 
 enum UserStatus {
-    ACTIVE
-    INACTIVE
-    DELETED
+  ACTIVE
+  INACTIVE
+  DELETED
 }
-
-enum Gender {
-    MALE
-    FEMALE
-}
+ enum UserGender {
+  MALE
+  FEMALE
+ }
