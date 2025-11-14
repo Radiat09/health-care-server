@@ -1,4 +1,4 @@
-import { envVars } from "../../../config/env";
+import { envVars } from "../../config/env";
 import { CreatePatientInput } from "./user.interface";
 import bcrypt from "bcryptjs";
 import { prisma } from "../../shared/prisma";
