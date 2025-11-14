@@ -6,10 +6,26 @@ export const validateRequest =
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       // req.body =JSON.parse(req.body.data || {}) || req.body
-      if (req.body.data) {
-        req.body = JSON.parse(req.body.data);
+      let parsedBody = req.body;
+
+      // Check if data field exists and needs parsing
+      if (req.body?.data !== undefined) {
+        if (typeof req.body.data === "string") {
+          try {
+            parsedBody = JSON.parse(req.body.data);
+          } catch (parseError) {
+            return res.status(400).json({
+              success: false,
+              message: "JSON Parse error: Invalid JSON in data field",
+              error: { message: "Invalid JSON format" },
+            });
+          }
+        } else {
+          // If data is already an object, use it directly
+          parsedBody = req.body.data;
+        }
       }
-      req.body = await zodSchema.parseAsync(req.body);
+      req.body = await zodSchema.parseAsync(parsedBody);
 
       next();
     } catch (error) {
