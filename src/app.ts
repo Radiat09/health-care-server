@@ -6,6 +6,7 @@ import config from "./config";
 import { uptime } from "process";
 import { timeStamp } from "console";
 import router from "./app/routes";
+import { envVars } from "./config/env";
 
 const app: Application = express();
 app.use(
@@ -23,7 +24,7 @@ app.use("/api/v1", router);
 app.get("/", (req: Request, res: Response) => {
   res.send({
     message: "Server is running..",
-    environment: config.node_env,
+    environment: envVars.NODE_ENV,
     uptime: process.uptime().toFixed(2) + " sec",
     timeStamp: new Date().toISOString(),
   });
