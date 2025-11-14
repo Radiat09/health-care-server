@@ -1,10 +1,10 @@
 import { Request, Response } from "express";
 import catchAsync from "../../shared/catchAsync";
-import { userService } from "./user.service";
+import { UserService } from "./user.service";
 import sendResponse from "../../shared/sendResponse";
 
 const createPatient = catchAsync(async (req: Request, res: Response) => {
-  const result = await userService.createPatient(req);
+  const result = await UserService.createPatient(req);
 
   sendResponse(res, {
     statusCode: 201,
@@ -14,6 +14,6 @@ const createPatient = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-export const userController = {
+export const UserController = {
   createPatient,
 };

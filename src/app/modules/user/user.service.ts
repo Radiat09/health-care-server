@@ -97,6 +97,6 @@ const createPatient = async (req: Request) => {
     throw error;
   }
 };
-export const userService = {
+export const UserService = {
   createPatient,
 };
