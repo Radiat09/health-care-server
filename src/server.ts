@@ -1,6 +1,7 @@
 import { Server } from "http";
 import app from "./app";
 import { envVars } from "./app/config/env";
+import { seedSuperAdmin } from "./app/shared/seedAdmin";
 
 async function bootstrap() {
   // This variable will hold our server instance
@@ -11,6 +12,8 @@ async function bootstrap() {
     server = app.listen(envVars.PORT, () => {
       console.log(`🚀 Server is running on http://localhost:${envVars.PORT}`);
     });
+
+    await seedSuperAdmin();
 
     // Function to gracefully shut down the server
     const exitHandler = () => {

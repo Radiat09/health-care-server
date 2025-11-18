@@ -11,11 +11,10 @@ RUN bun install
 # Copy everything
 COPY . .
 
-# Debug: List files to verify .env is copied
-RUN ls -la
-
+# Generate Prisma client
+RUN bunx prisma generate
 
 EXPOSE 5000
 
-# Generate Prisma client and start server
-CMD bunx prisma generate && bun run dev
+# Create database, run migrations, then start server
+CMD sh -c "bunx prisma db push && bun run dev"

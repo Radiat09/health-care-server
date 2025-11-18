@@ -4,6 +4,10 @@ import { prisma } from "../../shared/prisma";
 import { Request } from "express";
 import { AppError } from "../../errorHerlpers/AppError";
 import { deleteImageFromCLoudinary } from "../../config/cloudinary.config";
+import { Admin, Doctor, Prisma, UserRole } from "@prisma/client";
+import { userSearchableFields } from "./user.constants";
+import { CreateAdminInput } from "./user.interface";
+import { IOptions, paginationHelper } from "../../helpers/paginationHelper";
 
 // const createPatient = async (req: Request) => {
 //   const hashPassword = await bcrypt.hash(
@@ -97,6 +101,128 @@ const createPatient = async (req: Request) => {
     throw error;
   }
 };
+
+const createAdmin = async (req: Request): Promise<Admin> => {
+  if (req.file) {
+    req.body.admin.profilePhoto = req.file.path;
+  }
+
+  const hashedPassword: string = await bcrypt.hash(
+    req.body.password,
+    Number(envVars.BCRYPT_SALT_ROUND)
+  );
+
+  const userData = {
+    email: req.body.admin.email,
+    password: hashedPassword,
+    role: UserRole.ADMIN,
+    name: req.body.admin.name,
+  } as Prisma.UserCreateInput;
+
+  const result = await prisma.$transaction(async (transactionClient) => {
+    await transactionClient.user.create({
+      data: userData,
+    });
+
+    const createdAdminData = await transactionClient.admin.create({
+      data: req.body.admin,
+    });
+
+    return createdAdminData;
+  });
+
+  return result;
+};
+
+const createDoctor = async (req: Request): Promise<Doctor> => {
+  if (req.file) {
+    req.body.doctor.profilePhoto = req.file.path;
+  }
+  const hashedPassword: string = await bcrypt.hash(req.body.password, 10);
+
+  const userData = {
+    email: req.body.doctor.email,
+    password: hashedPassword,
+    role: UserRole.DOCTOR,
+    name: req.body.doctor.name,
+  } as Prisma.UserCreateInput;
+
+  const result = await prisma.$transaction(async (transactionClient) => {
+    await transactionClient.user.create({
+      data: userData,
+    });
+
+    const createdDoctorData = await transactionClient.doctor.create({
+      data: req.body.doctor,
+    });
+
+    return createdDoctorData;
+  });
+
+  return result;
+};
+
+const getAllFromDB = async (params: any, options: IOptions) => {
+  const { page, limit, skip, sortBy, sortOrder } =
+    paginationHelper.calculatePagination(options);
+  const { searchTerm, ...filterData } = params;
+
+  const andConditions: Prisma.UserWhereInput[] = [];
+
+  if (searchTerm) {
+    andConditions.push({
+      OR: userSearchableFields.map((field) => ({
+        [field]: {
+          contains: searchTerm,
+          mode: "insensitive",
+        },
+      })),
+    });
+  }
+
+  if (Object.keys(filterData).length > 0) {
+    andConditions.push({
+      AND: Object.keys(filterData).map((key) => ({
+        [key]: {
+          equals: (filterData as any)[key],
+        },
+      })),
+    });
+  }
+
+  const whereConditions: Prisma.UserWhereInput =
+    andConditions.length > 0
+      ? {
+          AND: andConditions,
+        }
+      : {};
+
+  const result = await prisma.user.findMany({
+    skip,
+    take: limit,
+
+    where: whereConditions,
+    orderBy: {
+      [sortBy]: sortOrder,
+    },
+  });
+
+  const total = await prisma.user.count({
+    where: whereConditions,
+  });
+  return {
+    meta: {
+      page,
+      limit,
+      total,
+    },
+    data: result,
+  };
+};
+
 export const UserService = {
   createPatient,
+  createAdmin,
+  createDoctor,
+  getAllFromDB,
 };
