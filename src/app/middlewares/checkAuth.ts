@@ -3,8 +3,8 @@ import httpStatus from "http-status-codes";
 import { JwtPayload } from "jsonwebtoken";
 import { envVars } from "../config/env";
 import { AppError } from "../errorHerlpers/AppError";
-import { verifyToken } from "../shared/jwt";
-import { prisma } from "../shared/prisma";
+import { verifyToken } from "../utils/jwt";
+import { prisma } from "../utils/prisma";
 import { UserStatus } from "@prisma/client";
 
 export const checkAuth =

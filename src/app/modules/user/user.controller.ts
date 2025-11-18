@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import catchAsync from "../../shared/catchAsync";
+import catchAsync from "../../utils/catchAsync";
 import { UserService } from "./user.service";
-import sendResponse from "../../shared/sendResponse";
+import sendResponse from "../../utils/sendResponse";
 import pick from "../../helpers/pick";
 import { userFilterableFields } from "./user.constants";
 

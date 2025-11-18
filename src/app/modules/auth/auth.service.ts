@@ -1,8 +1,8 @@
 import { UserStatus } from "@prisma/client";
-import { prisma } from "../../shared/prisma";
+import { prisma } from "../../utils/prisma";
 import bcrypt from "bcryptjs";
 import { AppError } from "../../errorHerlpers/AppError";
-import { createUserTokens } from "../../shared/userTokens";
+import { createUserTokens } from "../../utils/userTokens";
 
 const login = async (payload: { email: string; password: string }) => {
   const user = await prisma.user.findUniqueOrThrow({

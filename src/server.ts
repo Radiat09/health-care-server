@@ -1,7 +1,7 @@
 import { Server } from "http";
 import app from "./app";
 import { envVars } from "./app/config/env";
-import { seedSuperAdmin } from "./app/shared/seedAdmin";
+import { seedSuperAdmin } from "./app/utils/seedAdmin";
 
 async function bootstrap() {
   // This variable will hold our server instance
