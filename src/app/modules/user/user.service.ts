@@ -220,13 +220,7 @@ const createDoctor = async (req: Request): Promise<Doctor> => {
 //   };
 // };
 
-const getAllFromDB = async (params: any, options: any) => {
-  // Combine params and options into a single query object
-  const query = {
-    ...params,
-    ...options,
-  };
-
+const getAllFromDB = async (query: any) => {
   const queryBuilder = new QueryBuilder<
     typeof prisma.user,
     Prisma.UserWhereInput,

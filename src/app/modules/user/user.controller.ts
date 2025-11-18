@@ -37,10 +37,7 @@ const createDoctor = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllFromDB = catchAsync(async (req: Request, res: Response) => {
-  const filters = pick(req.query, userFilterableFields); // searching , filtering
-  const options = pick(req.query, ["page", "limit", "sortBy", "sortOrder"]); // pagination and sorting
-
-  const result = await UserService.getAllFromDB(filters, options);
+  const result = await UserService.getAllFromDB(req.query);
 
   sendResponse(res, {
     statusCode: 200,
