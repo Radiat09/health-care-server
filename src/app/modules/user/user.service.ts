@@ -257,6 +257,20 @@ export class UserServiceClass extends BaseService<"user"> {
   constructor(prisma: PrismaClient) {
     super(prisma, "user", ["name", "email"]);
   }
+  // Define safe fields to select
+  private get safeFieldsString(): string {
+    return "id,name,email,role,needPasswordChange,status,createdAt,updatedAt";
+  }
+
+  // Override getAllFromDB to exclude password field
+  async getAllFromDB(query: any) {
+    const queryWithSafeSelect = {
+      ...query,
+      fields: this.safeFieldsString, // Database only returns safe fields
+    };
+
+    return super.getAllFromDB(queryWithSafeSelect);
+  }
 
   async getUserByEmail(email: string) {
     return this.modelDelegate.findUnique({ where: { email } });

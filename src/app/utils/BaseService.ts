@@ -25,6 +25,24 @@ export abstract class BaseService<T extends ModelName> {
     return delegate;
   }
 
+  protected excludeFields<T>(
+    data: T,
+    fieldsToExclude: string[]
+  ): Omit<T, keyof T> {
+    const result = { ...data };
+    fieldsToExclude.forEach((field) => {
+      delete (result as any)[field];
+    });
+    return result;
+  }
+
+  protected excludeFieldsFromArray<T>(
+    data: T[],
+    fieldsToExclude: string[]
+  ): Array<Omit<T, keyof T>> {
+    return data.map((item) => this.excludeFields(item, fieldsToExclude));
+  }
+
   async getAllFromDB(query: any) {
     // const modelDelegate = this.prisma[this.model] as any;
 

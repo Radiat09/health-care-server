@@ -58,14 +58,14 @@ const createDoctor = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllFromDB = catchAsync(async (req: Request, res: Response) => {
-  const result = await UserService.getAllFromDB(req.query);
+  const result = await userService.getAllFromDB(req.query);
+  // const result = await UserService.getAllFromDB(req.query);
 
   sendResponse(res, {
     statusCode: 200,
     success: true,
     message: "User retrive successfully!",
-    meta: result.meta,
-    data: result.data,
+    ...result,
   });
 });
 
