@@ -16,7 +16,7 @@ cloudinary.config({
   api_secret: envVars.CLOUDINARY.CLOUDINARY_API_SECRET,
 });
 
-export const deleteImageFromCLoudinary = async (url: string) => {
+export const deleteImageFromCloudinary = async (url: string) => {
   try {
     //https://res.cloudinary.com/djzppynpk/image/upload/v1753126572/ay9roxiv8ue-1753126570086-download-2-jpg.jpg.jpg
 

@@ -3,11 +3,12 @@ import bcrypt from "bcryptjs";
 import { prisma } from "../../utils/prisma";
 import { Request } from "express";
 import { AppError } from "../../errorHerlpers/AppError";
-import { deleteImageFromCLoudinary } from "../../config/cloudinary.config";
-import { Admin, Doctor, Prisma, UserRole } from "@prisma/client";
+import { deleteImageFromCloudinary } from "../../config/cloudinary.config";
+import { Admin, Doctor, Patient, Prisma, UserRole } from "@prisma/client";
 import { userSearchableFields } from "./user.constants";
-import { IOptions, paginationHelper } from "../../helpers/paginationHelper";
 import { QueryBuilder } from "../../utils/QueryBuilder";
+import { PrismaClient } from "@prisma/client";
+import { BaseService, ModelName } from "../../utils/BaseService";
 
 // const createPatient = async (req: Request) => {
 //   const hashPassword = await bcrypt.hash(
@@ -89,7 +90,7 @@ const createPatient = async (req: Request) => {
   } catch (error) {
     // If transaction fails and image was uploaded, delete it from Cloudinary
     if (req.file) {
-      await deleteImageFromCLoudinary(req.file?.path as string).catch(
+      await deleteImageFromCloudinary(req.file?.path as string).catch(
         (deleteError) => {
           console.error("Failed to delete image from Cloudinary:", deleteError);
           // Don't throw here, we want to throw the original error
@@ -249,3 +250,149 @@ export const UserService = {
   createDoctor,
   getAllFromDB,
 };
+
+//User Service Class using BaseService
+// user.service.ts - Focused only on User operations
+export class UserServiceClass extends BaseService<"user"> {
+  constructor(prisma: PrismaClient) {
+    super(prisma, "user", ["name", "email"]);
+  }
+
+  async getUserByEmail(email: string) {
+    return this.modelDelegate.findUnique({ where: { email } });
+  }
+
+  async createUserWithRole(userData: {
+    email: string;
+    password: string;
+    role: UserRole;
+    name: string;
+  }) {
+    const existingUser = await this.getUserByEmail(userData.email);
+    if (existingUser) {
+      throw new AppError(409, "User with this email already exists");
+    }
+    return this.create(userData);
+  }
+
+  async hashPassword(password: string): Promise<string> {
+    return bcrypt.hash(password, Number(envVars.BCRYPT_SALT_ROUND));
+  }
+}
+
+// role-creation.service.ts - Handles role-based user creation
+export class RoleCreationService {
+  constructor(
+    private prisma: PrismaClient,
+    private userService: UserServiceClass
+  ) {}
+
+  private async handleImageUpload(req: Request, dataField: string) {
+    if (req.file) {
+      req.body[dataField].profilePhoto = req.file.path;
+    }
+  }
+
+  async createRoleBasedUser<T>(
+    req: Request,
+    config: {
+      dataField: string;
+      role: UserRole;
+      model: ModelName;
+    }
+  ): Promise<T> {
+    const { dataField, role, model } = config;
+
+    await this.handleImageUpload(req, dataField);
+
+    const hashedPassword = await this.userService.hashPassword(
+      req.body.password
+    );
+
+    const userData = {
+      email: req.body[dataField].email,
+      password: hashedPassword,
+      role: role,
+      name: req.body[dataField].name,
+    };
+
+    const result = await this.prisma.$transaction(async (transactionClient) => {
+      // Check for existing user WITHIN the transaction context
+      const existingUser = await transactionClient.user.findUnique({
+        where: { email: userData.email },
+      });
+
+      if (existingUser) {
+        throw new AppError(409, "User with this email already exists");
+      }
+
+      // Create user within transaction
+      await transactionClient.user.create({
+        data: userData,
+      });
+
+      const createdData = await (transactionClient as any)[model].create({
+        data: req.body[dataField],
+      });
+
+      return createdData;
+    });
+
+    return result;
+  }
+
+  async createPatient(req: Request): Promise<Patient> {
+    const hashedPassword = await this.userService.hashPassword(
+      req.body?.password
+    );
+
+    if (req.file) {
+      req.body.patient.profilePhoto = req.file?.path;
+    }
+
+    try {
+      const result = await this.prisma.$transaction(async (tnx) => {
+        const userData = {
+          name: req.body?.patient?.name,
+          email: req.body?.patient?.email,
+          password: hashedPassword,
+          role: UserRole.PATIENT,
+        };
+
+        // Check for existing user WITHIN the transaction
+        const existingUser = await tnx.user.findUnique({
+          where: { email: userData.email },
+        });
+
+        if (existingUser) {
+          throw new AppError(409, "User with this email already exists");
+        }
+
+        // Create user within transaction
+        await tnx.user.create({
+          data: userData,
+        });
+
+        const patient = await tnx.patient.create({
+          data: req.body.patient,
+        });
+
+        return patient;
+      });
+
+      return result;
+    } catch (error) {
+      if (req.file) {
+        await deleteImageFromCloudinary(req.file?.path as string).catch(
+          (deleteError) => {
+            console.error(
+              "Failed to delete image from Cloudinary:",
+              deleteError
+            );
+          }
+        );
+      }
+      throw error;
+    }
+  }
+}
