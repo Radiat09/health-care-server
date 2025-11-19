@@ -1,7 +1,7 @@
-import { PrismaClient } from "@prisma/client";
-import { QueryBuilder } from "./QueryBuilder";
-import bcrypt from "bcryptjs";
-import { envVars } from "../config/env";
+import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
+import { envVars } from '../config/env';
+import { QueryBuilder } from './QueryBuilder';
 
 // Use PrismaClient directly instead of PrismaService
 type PrismaClientModels = {
@@ -14,7 +14,7 @@ export abstract class BaseService<T extends ModelName> {
   constructor(
     protected readonly prisma: PrismaClient, // Use PrismaClient directly
     protected readonly model: T,
-    protected readonly searchableFields: string[]
+    protected readonly searchableFields: string[],
   ) {}
   // Add validation that the model exists
   protected get modelDelegate() {
@@ -25,10 +25,7 @@ export abstract class BaseService<T extends ModelName> {
     return delegate;
   }
 
-  protected excludeFields<T>(
-    data: T,
-    fieldsToExclude: string[]
-  ): Omit<T, keyof T> {
+  protected excludeFields<T>(data: T, fieldsToExclude: string[]): Omit<T, keyof T> {
     const result = { ...data };
     fieldsToExclude.forEach((field) => {
       delete (result as any)[field];
@@ -38,7 +35,7 @@ export abstract class BaseService<T extends ModelName> {
 
   protected excludeFieldsFromArray<T>(
     data: T[],
-    fieldsToExclude: string[]
+    fieldsToExclude: string[],
   ): Array<Omit<T, keyof T>> {
     return data.map((item) => this.excludeFields(item, fieldsToExclude));
   }
@@ -46,20 +43,25 @@ export abstract class BaseService<T extends ModelName> {
   async getAllFromDB(query: any) {
     // const modelDelegate = this.prisma[this.model] as any;
 
-    const queryBuilder = new QueryBuilder(
-      this.prisma,
-      this.modelDelegate,
-      query
-    );
+    const queryBuilder = new QueryBuilder(this.prisma, this.modelDelegate, query);
 
     const [data, meta] = await Promise.all([
-      queryBuilder
-        .filter()
-        .search(this.searchableFields)
-        .sort()
-        .fields()
-        .paginate()
-        .build(),
+      queryBuilder.filter().search(this.searchableFields).sort().fields().paginate().build(),
+      queryBuilder.getMeta(),
+    ]);
+
+    return { meta, data };
+  }
+
+  async getAllFromDBWithAdvancedFilter(query: any, customFilters?: Record<string, any>) {
+    const queryBuilder = new QueryBuilder(this.prisma, this.modelDelegate, query);
+
+    if (customFilters) {
+      queryBuilder.advancedFilter(customFilters);
+    }
+
+    const [data, meta] = await Promise.all([
+      queryBuilder.filter().search(this.searchableFields).sort().fields().paginate().build(),
       queryBuilder.getMeta(),
     ]);
 

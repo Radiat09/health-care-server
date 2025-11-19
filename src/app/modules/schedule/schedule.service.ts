@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { addHours, addMinutes, format } from 'date-fns';
+import { JwtPayload } from 'jsonwebtoken';
 import { BaseService } from '../../utils/BaseService';
 
 export class ScheduleServiceClass extends BaseService<'schedule'> {
@@ -61,6 +62,38 @@ export class ScheduleServiceClass extends BaseService<'schedule'> {
     }
 
     return schedules;
+  }
+
+  async schedulesForDoctor(
+    user: JwtPayload,
+    filters: { startDateTime?: Date; endDateTime?: Date },
+    options: any,
+  ) {
+    const doctorSchedules = await this.prisma.doctorSchedules.findMany({
+      where: {
+        doctor: {
+          email: user.email,
+        },
+      },
+      select: {
+        scheduleId: true,
+      },
+    });
+
+    const doctorScheduleIds = doctorSchedules.map((schedule) => schedule.scheduleId);
+
+    const customFilters = {
+      id: { notIn: doctorScheduleIds },
+      ...(filters.startDateTime &&
+        filters.endDateTime && {
+          AND: [
+            { startDateTime: { gte: filters.startDateTime } },
+            { endDateTime: { lte: filters.endDateTime } },
+          ],
+        }),
+    };
+
+    return this.getAllFromDBWithAdvancedFilter(options, customFilters);
   }
 }
 
