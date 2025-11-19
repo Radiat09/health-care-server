@@ -1,0 +1,36 @@
+services:
+  app:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=development
+      - PORT=5000
+      - DATABASE_URL=postgresql://dev_user:dev_password@db:5432/health_care_db?schema=public
+      - BCRYPT_SALT_ROUND=12
+      - CLOUDINARY_CLOUD_NAME=dplddg9n4
+      - CLOUDINARY_API_KEY=715378115524821
+      - CLOUDINARY_API_SECRET=C0UR3otMql86a6HPC1vFYpfrJnY
+      - JWT_ACCESS_SECRET=access_secreet
+      - JWT_ACCESS_EXPIRES=1d
+      - JWT_REFRESH_SECRET=JWTREFRESH_SECRET
+      - JWT_REFRESH_EXPIRES=30d
+      - SUPER_ADMIN_EMAIL=radiat@rid.com
+      - SUPER_ADMIN_PASSWORD=Radiat@12345
+
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=dev_user
+      - POSTGRES_PASSWORD=dev_password
+      - POSTGRES_DB=health_care_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
