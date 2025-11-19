@@ -410,3 +410,7 @@ export class RoleCreationService {
     }
   }
 }
+
+const prisma = new PrismaClient();
+export const userService = new UserServiceClass(prisma);
+export const roleCreationService = new RoleCreationService(prisma, userService);
