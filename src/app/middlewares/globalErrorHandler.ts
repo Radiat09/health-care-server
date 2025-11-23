@@ -1,271 +1,298 @@
-// import { NextFunction, Request, Response } from "express"
-// import httpStatus from "http-status"
+import { Prisma } from '@prisma/client';
+import { NextFunction, Request, Response } from 'express';
+import httpStatus from 'http-status';
+import { AppError } from '../errorHerlpers/AppError';
 
-// const globalErrorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
+const globalErrorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
+  console.log(err);
 
-//     let statusCode = httpStatus.INTERNAL_SERVER_ERROR;
-//     let success = false;
-//     let message = err.message || "Something went wrong!";
-//     let error = err;
+  let statusCode: number = err.statusCode || httpStatus.INTERNAL_SERVER_ERROR;
+  let success = false;
+  let message = err.message || 'Something went wrong!';
+  let error = err;
 
-//     res.status(statusCode).json({
-//         success,
-//         message,
-//         error
-//     })
-// };
-
-// export default globalErrorHandler;
-
-import { NextFunction, Request, Response } from "express";
-import { envVars } from "../config/env";
-import { handlerDuplicateError } from "../helpers/handleDuplicateError";
-import { TErrorSources } from "../interfaces/error.types";
-import { AppError } from "../errorHerlpers/AppError";
-import { handlePrismaValidationError } from "../helpers/handlePrismaValidationError";
-import { handlerZodError } from "../helpers/handlerZodError";
-import multer from "multer";
-import { handleMulterError } from "../helpers/handleMulterError";
-
-const globalErrorHandler = async (
-  err: any,
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  if (envVars.NODE_ENV === "development") {
-    console.log("🚀 Global Error Handler:", err);
-  }
-
-  let errorSources: TErrorSources[] = [];
-  let statusCode = 500;
-  let message = "Something Went Wrong!!";
-
-  // Multer Errors - Handle first since they're most specific
-  if (err instanceof multer.MulterError) {
-    const simplifiedError = handleMulterError(err);
-    statusCode = simplifiedError.statusCode;
-    message = simplifiedError.message;
-    errorSources = simplifiedError.errorSources || [];
-  }
-  // Prisma Client Validation Errors
-  else if (err.name === "PrismaClientValidationError") {
-    statusCode = 400;
-    message = "Invalid database operation";
-    errorSources = [
-      {
-        path: "data",
-        message: "The request contains invalid fields for the database schema",
-      },
-    ];
-  }
-  // Prisma Errors (by error code)
-  else if (err.code) {
-    switch (err.code) {
-      // Unique constraint violation (like duplicate key)
-      case "P2002":
-        const simplifiedError = handlerDuplicateError(err);
-        statusCode = simplifiedError.statusCode;
-        message = simplifiedError.message;
-        errorSources = simplifiedError.errorSources || [
-          {
-            path: err.meta?.target?.[0] || "unknown",
-            message: `Duplicate value for field: ${
-              err.meta?.target?.[0] || "unknown"
-            }`,
-          },
-        ];
-        break;
-
-      // Record not found
-      case "P2025":
-        statusCode = 404;
-        message = err.meta?.cause || "Record not found";
-        errorSources = [
-          {
-            path: "id",
-            message: err.meta?.cause || "The requested record was not found",
-          },
-        ];
-        break;
-
-      // Foreign key constraint failed
-      case "P2003":
-        statusCode = 400;
-        message = "Foreign key constraint failed";
-        errorSources = [
-          {
-            path: err.meta?.field_name || "unknown",
-            message: `Invalid reference: ${err.meta?.field_name || "unknown"}`,
-          },
-        ];
-        break;
-
-      // Required relation violation
-      case "P2018":
-        statusCode = 400;
-        message = "Required relation not found";
-        errorSources = [
-          {
-            path: "relation",
-            message: "The required connected records were not found",
-          },
-        ];
-        break;
-
-      // Query parameter validation error
-      case "P2020":
-        statusCode = 400;
-        message = "Value out of range for the type";
-        errorSources = [
-          {
-            path: err.meta?.target || "unknown",
-            message: `Value is too large for the field type: ${
-              err.meta?.target || "unknown"
-            }`,
-          },
-        ];
-        break;
-
-      // Prisma validation errors
-      case "P2000":
-      case "P2001":
-      case "P2006":
-        const validationError = handlePrismaValidationError(err);
-        statusCode = validationError.statusCode;
-        message = validationError.message;
-        errorSources = validationError.errorSources || [];
-        break;
-
-      // Connection and timeout errors
-      case "P1000":
-      case "P1001":
-      case "P1002":
-      case "P1003":
-      case "P1008":
-      case "P1009":
-        statusCode = 503;
-        message = "Database connection error";
-        errorSources = [
-          {
-            path: "database",
-            message: "Unable to connect to the database",
-          },
-        ];
-        break;
-
-      // Database schema issues
-      case "P1010":
-      case "P1011":
-      case "P1012":
-      case "P1013":
-      case "P1014":
-      case "P1015":
-      case "P1016":
-      case "P1017":
-        statusCode = 500;
-        message = "Database schema error";
-        errorSources = [
-          {
-            path: "database",
-            message: "There is an issue with the database schema",
-          },
-        ];
-        break;
-
-      // Transaction errors
-      case "P2028":
-        statusCode = 500;
-        message = "Transaction error";
-        errorSources = [
-          {
-            path: "transaction",
-            message: "A transaction error occurred",
-          },
-        ];
-        break;
-
-      // Timeout errors
-      case "P2024":
-        statusCode = 408;
-        message = "Database operation timeout";
-        errorSources = [
-          {
-            path: "database",
-            message: "The database operation timed out",
-          },
-        ];
-        break;
-
-      default:
-        // Handle other Prisma error codes
-        statusCode = 400;
-        message = err.message || "Database operation failed";
-        errorSources = [
-          {
-            path: "database",
-            message: err.message || "An unexpected database error occurred",
-          },
-        ];
-    }
-  }
-  // Zod Validation Errors
-  else if (err.name === "ZodError") {
-    const simplifiedError = handlerZodError(err);
-    statusCode = simplifiedError.statusCode;
-    message = simplifiedError.message;
-    errorSources = simplifiedError.errorSources || [];
-  }
-  // Custom AppError
-  else if (err instanceof AppError) {
+  // Handle AppError instances
+  if (err instanceof AppError) {
     statusCode = err.statusCode;
     message = err.message;
-    errorSources = err.errorSources || [];
+    error = err.errorSources || err;
   }
-  // Generic JavaScript Errors
-  else if (err instanceof Error) {
-    statusCode = 500;
-    message = err.message;
+  // Prisma Known Request Errors
+  else if (err instanceof Prisma.PrismaClientKnownRequestError) {
+    const { modelName, cause, target, field_name } = err.meta || {};
 
-    // Handle common non-Prisma errors
-    if (err.name === "JsonWebTokenError") {
-      statusCode = 401;
-      message = "Invalid token";
-    } else if (err.name === "TokenExpiredError") {
-      statusCode = 401;
-      message = "Token has expired";
-    } else if (err.name === "SyntaxError" && err.message.includes("JSON")) {
-      statusCode = 400;
-      message = "Invalid JSON in request body";
+    if (err.code === 'P2002') {
+      // Unique constraint violation
+      const field = (target as string[])?.[0] || 'unknown';
+      message = `${field.charAt(0).toUpperCase() + field.slice(1)} already exists`;
+      error = {
+        model: modelName,
+        field,
+        constraint: 'unique',
+        details: `A ${
+          (modelName as string)?.toLowerCase() || 'record'
+        } with this ${field} already exists`,
+        ...((target && { target }) as object),
+      };
+      statusCode = httpStatus.CONFLICT;
+    } else if (err.code === 'P1000') {
+      // Authentication failed
+      message = 'Database authentication failed';
+      error = {
+        type: 'authentication',
+        details: 'Unable to authenticate with the database server',
+        suggestion: 'Check database credentials and connection settings',
+      };
+      statusCode = httpStatus.BAD_GATEWAY;
+    } else if (err.code === 'P2003') {
+      // Foreign key constraint failed
+      const field = field_name || 'unknown';
+      message = `Invalid ${field} reference`;
+      error = {
+        model: modelName,
+        field,
+        constraint: 'foreign_key',
+        details: `The referenced record does not exist`,
+        ...((field_name && { field_name }) as object),
+      };
+      statusCode = httpStatus.BAD_REQUEST;
+    } else if (err.code === 'P2025') {
+      // Record not found - Enhanced field detection
+      const fieldInfo = extractFieldFromP2025Error(err, req);
+      message = `${modelName || 'Record'} not found`;
+      error = {
+        model: modelName,
+        ...fieldInfo,
+        details: getP2025Details(modelName as string, fieldInfo.field),
+        suggestion: 'Please check the search criteria and try again',
+      };
+      statusCode = httpStatus.NOT_FOUND;
+    } else if (err.code === 'P2018') {
+      // Required relation violation
+      message = 'Required relationship not found';
+      error = {
+        model: modelName,
+        type: 'relation',
+        details: 'The required connected records were not found',
+        suggestion: 'Ensure all required related records exist before creating this record',
+      };
+      statusCode = httpStatus.BAD_REQUEST;
+    } else if (err.code === 'P2020') {
+      // Value out of range
+      const field = target || 'unknown';
+      message = `Value out of range for ${field}`;
+      error = {
+        model: modelName,
+        field,
+        type: 'range_error',
+        details: `The value provided for ${field} is too large for its data type`,
+        ...((target && { target }) as object),
+      };
+      statusCode = httpStatus.BAD_REQUEST;
+    } else if (err.code === 'P2000') {
+      // Value too long for column
+      const field = target || 'unknown';
+      message = `Value too long for ${field}`;
+      error = {
+        model: modelName,
+        field,
+        type: 'length_error',
+        details: `The value provided for ${field} exceeds the maximum allowed length`,
+        ...((target && { target }) as object),
+      };
+      statusCode = httpStatus.BAD_REQUEST;
+    } else if (err.code === 'P2001') {
+      // Record does not exist
+      message = `${modelName || 'Record'} does not exist`;
+      error = {
+        model: modelName,
+        details: 'The record you are trying to access does not exist',
+        suggestion: 'Verify the record exists before performing this operation',
+      };
+      statusCode = httpStatus.NOT_FOUND;
+    } else if (err.code === 'P2006') {
+      // Invalid value provided
+      message = 'Invalid value provided';
+      error = {
+        model: modelName,
+        type: 'validation',
+        details: 'The provided value is not valid for this field',
+        suggestion: 'Check the data type and constraints for this field',
+      };
+      statusCode = httpStatus.BAD_REQUEST;
+    } else if (err.code === 'P2024') {
+      // Database operation timeout
+      message = 'Database operation timed out';
+      error = {
+        type: 'timeout',
+        details: 'The database operation took too long to complete',
+        suggestion: 'Try again later or optimize your query',
+      };
+      statusCode = httpStatus.REQUEST_TIMEOUT;
+    } else if (err.code === 'P2028') {
+      // Transaction error
+      message = 'Database transaction failed';
+      error = {
+        type: 'transaction',
+        details: 'A database transaction error occurred',
+        suggestion: 'The operation may have been partially applied. Please verify the results.',
+      };
+      statusCode = httpStatus.INTERNAL_SERVER_ERROR;
+    } else {
+      // Handle other Prisma errors generically
+      message = `Database error: ${err.code}`;
+      error = {
+        code: err.code,
+        model: modelName,
+        details: cause || 'An unexpected database error occurred',
+        ...(err.meta && { meta: err.meta }),
+      };
+      statusCode = httpStatus.BAD_REQUEST;
     }
   }
-
-  // Log detailed error in development
-  if (envVars.NODE_ENV === "development") {
-    console.log("📋 Error Details:", {
-      statusCode,
-      message,
-      errorSources,
-      stack: err.stack,
-      prismaCode: err.code,
-      prismaMeta: err.meta,
-    });
+  // ... rest of your error handlers remain the same
+  // Prisma Validation Error
+  else if (err instanceof Prisma.PrismaClientValidationError) {
+    message = 'Database validation error';
+    error = {
+      type: 'validation',
+      details: 'The provided data does not match the database schema',
+      suggestion: 'Check all required fields and data types',
+      originalMessage: err.message,
+    };
+    statusCode = httpStatus.BAD_REQUEST;
+  }
+  // Prisma Unknown Request Error
+  else if (err instanceof Prisma.PrismaClientUnknownRequestError) {
+    message = 'Unknown database error occurred';
+    error = {
+      type: 'unknown',
+      details: 'An unexpected database error occurred',
+      originalMessage: err.message,
+    };
+    statusCode = httpStatus.BAD_REQUEST;
+  }
+  // Prisma Initialization Error
+  else if (err instanceof Prisma.PrismaClientInitializationError) {
+    message = 'Database connection failed';
+    error = {
+      type: 'initialization',
+      details: 'Unable to initialize database connection',
+      originalMessage: err.message,
+      errorCode: err.errorCode,
+    };
+    statusCode = httpStatus.INTERNAL_SERVER_ERROR;
+  }
+  // Multer Errors (file upload)
+  else if (err.code && err.code.startsWith('MULTER_')) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      message = 'File too large';
+      error = {
+        type: 'file_size',
+        details: 'The uploaded file exceeds the maximum allowed size',
+        suggestion: 'Please upload a smaller file',
+      };
+      statusCode = httpStatus.BAD_REQUEST;
+    } else if (err.code === 'LIMIT_FILE_COUNT') {
+      message = 'Too many files';
+      error = {
+        type: 'file_count',
+        details: 'Too many files were uploaded in a single request',
+        suggestion: 'Reduce the number of files and try again',
+      };
+      statusCode = httpStatus.BAD_REQUEST;
+    } else if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+      message = 'Unexpected file field';
+      error = {
+        type: 'file_field',
+        details: 'A file was uploaded with an unexpected field name',
+        suggestion: 'Check the form field names for file uploads',
+      };
+      statusCode = httpStatus.BAD_REQUEST;
+    }
+  }
+  // JWT Errors
+  else if (err.name === 'JsonWebTokenError') {
+    message = 'Invalid authentication token';
+    error = {
+      type: 'authentication',
+      details: 'The provided token is invalid',
+      suggestion: 'Please log in again',
+    };
+    statusCode = httpStatus.UNAUTHORIZED;
+  } else if (err.name === 'TokenExpiredError') {
+    message = 'Authentication token expired';
+    error = {
+      type: 'authentication',
+      details: 'Your session has expired',
+      suggestion: 'Please log in again',
+    };
+    statusCode = httpStatus.UNAUTHORIZED;
+  }
+  // JSON Parse Errors
+  else if (err.name === 'SyntaxError' && err.message.includes('JSON')) {
+    message = 'Invalid JSON in request';
+    error = {
+      type: 'json_parse',
+      details: 'The request body contains invalid JSON',
+      suggestion: 'Check your request body for JSON syntax errors',
+    };
+    statusCode = httpStatus.BAD_REQUEST;
   }
 
   res.status(statusCode).json({
-    success: false,
+    success,
     message,
-    errorSources: errorSources.length > 0 ? errorSources : undefined,
-    ...(envVars.NODE_ENV === "development" && {
-      error: {
-        name: err.name,
-        ...(err.clientVersion && { clientVersion: err.clientVersion }),
-      },
-      stack: err.stack,
-      prismaCode: err.code,
-      prismaMeta: err.meta,
-    }),
+    error,
   });
 };
+
+// Enhanced field extraction for P2025 errors
+function extractFieldFromP2025Error(err: any, req: Request): { field?: string; value?: string } {
+  const { modelName, cause } = err.meta || {};
+
+  // Try to extract from URL parameters (common for GET /users/:id)
+  const urlParams = Object.keys(req.params);
+  if (urlParams.length > 0) {
+    const primaryKey =
+      urlParams.find((param) => ['id', 'userId', 'productId', 'postId'].includes(param)) ||
+      urlParams[0];
+
+    return {
+      field: primaryKey,
+      value: req.params[primaryKey],
+    };
+  }
+
+  // Try to extract from query parameters (common for GET /users?email=...)
+  const queryParams = Object.keys(req.query);
+  if (queryParams.length > 0) {
+    return {
+      field: queryParams[0],
+      value: req.query[queryParams[0]] as string,
+    };
+  }
+
+  // Fallback: try to parse from error message
+  if (typeof cause === 'string') {
+    // Look for common patterns in Prisma error messages
+    const fieldMatch = cause.match(/for (\w+)/) || cause.match(/where.*?(\w+)/);
+    if (fieldMatch) {
+      return { field: fieldMatch[1] };
+    }
+  }
+
+  // Ultimate fallback
+  return { field: 'id' }; // Assume 'id' as default
+}
+
+// Helper to generate appropriate details for P2025
+function getP2025Details(modelName?: string, field?: string): string {
+  const model = modelName?.toLowerCase() || 'record';
+  if (field) {
+    return `No ${model} found with the specified ${field}`;
+  }
+  return `No ${model} found with the provided criteria`;
+}
 
 export default globalErrorHandler;
