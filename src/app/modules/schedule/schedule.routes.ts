@@ -7,8 +7,8 @@ const router = express.Router();
 
 router.get('/', checkAuth(UserRole.DOCTOR, UserRole.ADMIN), ScheduleController.schedulesForDoctor);
 
-router.post('/', ScheduleController.insertIntoDB);
+router.post('/', checkAuth(UserRole.ADMIN), ScheduleController.insertIntoDB);
 
-router.delete('/:id', ScheduleController.deleteScheduleFromDB);
+router.delete('/:id', checkAuth(UserRole.ADMIN), ScheduleController.deleteScheduleFromDB);
 
 export const scheduleRoutes = router;
