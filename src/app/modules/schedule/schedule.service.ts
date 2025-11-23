@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { addHours, addMinutes, format } from 'date-fns';
 import { JwtPayload } from 'jsonwebtoken';
 import { BaseService } from '../../utils/BaseService';
+import { prisma } from '../../utils/prisma';
 
 export class ScheduleServiceClass extends BaseService<'schedule'> {
   constructor(prisma: PrismaClient) {
@@ -86,16 +87,16 @@ export class ScheduleServiceClass extends BaseService<'schedule'> {
       id: { notIn: doctorScheduleIds },
       ...(filters.startDateTime &&
         filters.endDateTime && {
-          AND: [
-            { startDateTime: { gte: filters.startDateTime } },
-            { endDateTime: { lte: filters.endDateTime } },
-          ],
-        }),
+        AND: [
+          { startDateTime: { gte: filters.startDateTime } },
+          { endDateTime: { lte: filters.endDateTime } },
+        ],
+      }),
     };
 
     return this.getAllFromDBWithAdvancedFilter(options, customFilters);
   }
 }
 
-const prisma = new PrismaClient();
+
 export const scheduleService = new ScheduleServiceClass(prisma);

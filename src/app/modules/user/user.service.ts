@@ -1,14 +1,13 @@
-import { envVars } from "../../config/env";
+import { Admin, Doctor, Patient, Prisma, PrismaClient, UserRole } from "@prisma/client";
 import bcrypt from "bcryptjs";
-import { prisma } from "../../utils/prisma";
 import { Request } from "express";
-import { AppError } from "../../errorHerlpers/AppError";
 import { deleteImageFromCloudinary } from "../../config/cloudinary.config";
-import { Admin, Doctor, Patient, Prisma, UserRole } from "@prisma/client";
-import { userSearchableFields } from "./user.constants";
-import { QueryBuilder } from "../../utils/QueryBuilder";
-import { PrismaClient } from "@prisma/client";
+import { envVars } from "../../config/env";
+import { AppError } from "../../errorHerlpers/AppError";
 import { BaseService, ModelName } from "../../utils/BaseService";
+import { prisma } from "../../utils/prisma";
+import { QueryBuilder } from "../../utils/QueryBuilder";
+import { userSearchableFields } from "./user.constants";
 
 // const createPatient = async (req: Request) => {
 //   const hashPassword = await bcrypt.hash(
@@ -299,7 +298,7 @@ export class RoleCreationService {
   constructor(
     private prisma: PrismaClient,
     private userService: UserServiceClass
-  ) {}
+  ) { }
 
   private async handleImageUpload(req: Request, dataField: string) {
     if (req.file) {
@@ -411,6 +410,6 @@ export class RoleCreationService {
   }
 }
 
-const prisma = new PrismaClient();
+
 export const userService = new UserServiceClass(prisma);
 export const roleCreationService = new RoleCreationService(prisma, userService);

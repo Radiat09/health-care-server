@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { JwtPayload } from 'jsonwebtoken';
 import { BaseService } from '../../utils/BaseService';
+import { prisma } from '../../utils/prisma';
 
 class DoctorScheduleServiceClass extends BaseService<'doctorSchedules'> {
   constructor(prisma: PrismaClient) {
@@ -23,7 +24,7 @@ class DoctorScheduleServiceClass extends BaseService<'doctorSchedules'> {
     if (!doctorData) {
       throw new Error(
         `Doctor profile not found for email: ${user.email}. ` +
-          `Please complete your doctor registration first.`,
+        `Please complete your doctor registration first.`,
       );
     }
 
@@ -55,5 +56,5 @@ class DoctorScheduleServiceClass extends BaseService<'doctorSchedules'> {
     });
   }
 }
-const prisma = new PrismaClient();
+
 export const doctorScheduleService = new DoctorScheduleServiceClass(prisma);
