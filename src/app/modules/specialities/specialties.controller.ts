@@ -1,43 +1,43 @@
-import { Request, Response } from "express";
-import httpStatus from "http-status";
-import { SpecialtiesService } from "./specialties.service";
-import catchAsync from "../../shared/catchAsync";
-import sendResponse from "../../shared/sendResponse";
+import { Request, Response } from 'express';
+import httpStatus from 'http-status';
+import catchAsync from '../../utils/catchAsync';
+import sendResponse from '../../utils/sendResponse';
+import { SpecialtiesService } from './specialties.service';
 
 const inserIntoDB = catchAsync(async (req: Request, res: Response) => {
-    const result = await SpecialtiesService.inserIntoDB(req);
+  const result = await SpecialtiesService.inserIntoDB(req);
 
-    sendResponse(res, {
-        statusCode: httpStatus.OK,
-        success: true,
-        message: "Specialties created successfully!",
-        data: result
-    });
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Specialties created successfully!',
+    data: result,
+  });
 });
 
 const getAllFromDB = catchAsync(async (req: Request, res: Response) => {
-    const result = await SpecialtiesService.getAllFromDB();
-    sendResponse(res, {
-        statusCode: httpStatus.OK,
-        success: true,
-        message: 'Specialties data fetched successfully',
-        data: result,
-    });
+  const result = await SpecialtiesService.getAllFromDB();
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Specialties data fetched successfully',
+    data: result,
+  });
 });
 
 const deleteFromDB = catchAsync(async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const result = await SpecialtiesService.deleteFromDB(id);
-    sendResponse(res, {
-        statusCode: httpStatus.OK,
-        success: true,
-        message: 'Specialty deleted successfully',
-        data: result,
-    });
+  const { id } = req.params;
+  const result = await SpecialtiesService.deleteFromDB(id);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Specialty deleted successfully',
+    data: result,
+  });
 });
 
 export const SpecialtiesController = {
-    inserIntoDB,
-    getAllFromDB,
-    deleteFromDB
+  inserIntoDB,
+  getAllFromDB,
+  deleteFromDB,
 };
