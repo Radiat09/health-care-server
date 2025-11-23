@@ -1,13 +1,12 @@
-import express, { NextFunction, Request, Response } from 'express';
+import { UserRole } from '@prisma/client';
+import express from 'express';
+import { multerWithErrorHandling } from '../../config/multer.config';
+import { checkAuth } from '../../middlewares/checkAuth';
+import { validateRequest } from '../../middlewares/validateRequest';
 import { SpecialtiesController } from './specialties.controller';
 import { SpecialtiesValidtaion } from './specialties.validation';
-import auth from '../../middlewares/auth';
-import { UserRole } from '@prisma/client';
-import { fileUploader } from '../../helper/fileUploader';
-
 
 const router = express.Router();
-
 
 // Task 1: Retrieve Specialties Data
 
@@ -16,21 +15,14 @@ const router = express.Router();
 - Implement an HTTP GET endpoint returning specialties in JSON format.
 - ENDPOINT: /specialties
 */
-router.get(
-    '/',
-    SpecialtiesController.getAllFromDB
-);
+router.get('/', SpecialtiesController.getAllFromDB);
 
 router.post(
-    '/',
-    fileUploader.upload.single('file'),
-    (req: Request, res: Response, next: NextFunction) => {
-        req.body = SpecialtiesValidtaion.create.parse(JSON.parse(req.body.data))
-        return SpecialtiesController.inserIntoDB(req, res, next)
-    }
+  '/',
+  multerWithErrorHandling.single('file'),
+  validateRequest(SpecialtiesValidtaion.create),
+  SpecialtiesController.inserIntoDB(),
 );
-
-
 
 // Task 2: Delete Specialties Data by ID
 
@@ -42,9 +34,9 @@ router.post(
 */
 
 router.delete(
-    '/:id',
-    auth(UserRole.ADMIN, UserRole.ADMIN),
-    SpecialtiesController.deleteFromDB
+  '/:id',
+  checkAuth(UserRole.DOCTOR, UserRole.ADMIN),
+  SpecialtiesController.deleteFromDB,
 );
 
 export const SpecialtiesRoutes = router;
