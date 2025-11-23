@@ -1,6 +1,5 @@
+import { Specialities } from '@prisma/client';
 import { Request } from 'express';
-
-import { Specialties } from '@prisma/client';
 import { prisma } from '../../utils/prisma';
 
 const inserIntoDB = async (req: Request) => {
@@ -10,19 +9,19 @@ const inserIntoDB = async (req: Request) => {
     req.body.icon = file?.path;
   }
 
-  const result = await prisma.specialties.create({
+  const result = await prisma.specialities.create({
     data: req.body,
   });
 
   return result;
 };
 
-const getAllFromDB = async (): Promise<Specialties[]> => {
-  return await prisma.specialties.findMany();
+const getAllFromDB = async (): Promise<Specialities[]> => {
+  return await prisma.specialities.findMany();
 };
 
-const deleteFromDB = async (id: string): Promise<Specialties> => {
-  const result = await prisma.specialties.delete({
+const deleteFromDB = async (id: string): Promise<Specialities> => {
+  const result = await prisma.specialities.delete({
     where: {
       id,
     },
