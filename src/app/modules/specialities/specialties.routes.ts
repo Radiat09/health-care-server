@@ -21,7 +21,7 @@ router.post(
   '/',
   multerWithErrorHandling.single('file'),
   validateRequest(SpecialtiesValidtaion.create),
-  SpecialtiesController.inserIntoDB(),
+  SpecialtiesController.inserIntoDB,
 );
 
 // Task 2: Delete Specialties Data by ID
