@@ -17,6 +17,7 @@ services:
       - JWT_REFRESH_EXPIRES=30d
       - SUPER_ADMIN_EMAIL=radiat@rid.com
       - SUPER_ADMIN_PASSWORD=Radiat@12345
+      - OPENAI_API_KEY=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
     depends_on:
       db:
         condition: service_healthy
