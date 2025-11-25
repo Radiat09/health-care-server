@@ -1,6 +1,8 @@
 import { Prisma } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express';
 import httpStatus from 'http-status';
+import { MulterError } from 'multer';
+import OpenAI from 'openai';
 import { AppError } from '../errorHerlpers/AppError';
 
 const globalErrorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
@@ -29,9 +31,8 @@ const globalErrorHandler = (err: any, req: Request, res: Response, next: NextFun
         model: modelName,
         field,
         constraint: 'unique',
-        details: `A ${
-          (modelName as string)?.toLowerCase() || 'record'
-        } with this ${field} already exists`,
+        details: `A ${(modelName as string)?.toLowerCase() || 'record'
+          } with this ${field} already exists`,
         ...((target && { target }) as object),
       };
       statusCode = httpStatus.CONFLICT;
@@ -184,61 +185,73 @@ const globalErrorHandler = (err: any, req: Request, res: Response, next: NextFun
     statusCode = httpStatus.INTERNAL_SERVER_ERROR;
   }
   // Multer Errors (file upload)
-  else if (err.code && err.code.startsWith('MULTER_')) {
-    if (err.code === 'LIMIT_FILE_SIZE') {
-      message = 'File too large';
-      error = {
-        type: 'file_size',
-        details: 'The uploaded file exceeds the maximum allowed size',
-        suggestion: 'Please upload a smaller file',
-      };
-      statusCode = httpStatus.BAD_REQUEST;
-    } else if (err.code === 'LIMIT_FILE_COUNT') {
-      message = 'Too many files';
-      error = {
-        type: 'file_count',
-        details: 'Too many files were uploaded in a single request',
-        suggestion: 'Reduce the number of files and try again',
-      };
-      statusCode = httpStatus.BAD_REQUEST;
-    } else if (err.code === 'LIMIT_UNEXPECTED_FILE') {
-      message = 'Unexpected file field';
-      error = {
-        type: 'file_field',
-        details: 'A file was uploaded with an unexpected field name',
-        suggestion: 'Check the form field names for file uploads',
-      };
-      statusCode = httpStatus.BAD_REQUEST;
+  // Handle OpenAI/OpenRouter API Errors
+  if (err instanceof OpenAI.APIError) {
+    statusCode = err.status || 500;
+    message = `AI Service Error: ${err.message}`;
+    error = {
+      code: err.code,
+      type: err.type,
+      param: err.param,
+      status: err.status
+    };
+
+    // Specific handling for different OpenAI error types
+    switch (err.status) {
+      case 401:
+        message = 'AI Service Authentication Failed: Invalid API Key';
+        break;
+      case 403:
+        message = 'AI Service Access Denied: Check your permissions';
+        break;
+      case 429:
+        message = 'AI Service Rate Limit Exceeded: Too many requests';
+        break;
+      case 500:
+        message = 'AI Service Internal Error: Please try again later';
+        break;
+      case 503:
+        message = 'AI Service Unavailable: Service is overloaded';
+        break;
     }
   }
-  // JWT Errors
-  else if (err.name === 'JsonWebTokenError') {
-    message = 'Invalid authentication token';
+
+  // Handle Multer Errors (with safe code check)
+  else if (err instanceof MulterError ||
+    (err.code && typeof err.code === 'string' && err.code.startsWith('MULTER_'))) {
+    statusCode = 400;
+    message = `File Upload Error: ${err.message}`;
+
+    switch (err.code) {
+      case 'LIMIT_FILE_SIZE':
+        message = 'File too large: Please upload a smaller file';
+        break;
+      case 'LIMIT_FILE_COUNT':
+        message = 'Too many files: Please upload fewer files';
+        break;
+      case 'LIMIT_UNEXPECTED_FILE':
+        message = 'Unexpected file field: Please check your file upload';
+        break;
+    }
+  } else if (err.code === 'LIMIT_FILE_COUNT') {
+    message = 'Too many files';
     error = {
-      type: 'authentication',
-      details: 'The provided token is invalid',
-      suggestion: 'Please log in again',
+      type: 'file_count',
+      details: 'Too many files were uploaded in a single request',
+      suggestion: 'Reduce the number of files and try again',
     };
-    statusCode = httpStatus.UNAUTHORIZED;
-  } else if (err.name === 'TokenExpiredError') {
-    message = 'Authentication token expired';
+    statusCode = httpStatus.BAD_REQUEST;
+  } else if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+    message = 'Unexpected file field';
     error = {
-      type: 'authentication',
-      details: 'Your session has expired',
-      suggestion: 'Please log in again',
-    };
-    statusCode = httpStatus.UNAUTHORIZED;
-  }
-  // JSON Parse Errors
-  else if (err.name === 'SyntaxError' && err.message.includes('JSON')) {
-    message = 'Invalid JSON in request';
-    error = {
-      type: 'json_parse',
-      details: 'The request body contains invalid JSON',
-      suggestion: 'Check your request body for JSON syntax errors',
+      type: 'file_field',
+      details: 'A file was uploaded with an unexpected field name',
+      suggestion: 'Check the form field names for file uploads',
     };
     statusCode = httpStatus.BAD_REQUEST;
   }
+
+
 
   res.status(statusCode).json({
     success,
