@@ -1,15 +1,11 @@
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from '@prisma/client';
 
-export class QueryBuilder<
-  TModel extends PrismaModel,
-  TWhereInput = any,
-  TSelectInput = any
-> {
+export class QueryBuilder<TModel extends PrismaModel, TWhereInput = any, TSelectInput = any> {
   private prisma: PrismaClient;
   private model: TModel;
   private query: Record<string, any>;
   private whereConditions: TWhereInput[] = [];
-  private orderBy: Record<string, "asc" | "desc"> = {};
+  private orderBy: Record<string, 'asc' | 'desc'> = {};
   private selectFields: TSelectInput | undefined;
   private skip: number = 0;
   private limit: number = 10;
@@ -29,7 +25,7 @@ export class QueryBuilder<
         OR: searchableFields.map((field) => ({
           [field]: {
             contains: searchTerm,
-            mode: "insensitive" as Prisma.QueryMode,
+            mode: 'insensitive' as Prisma.QueryMode,
           },
         })),
       } as TWhereInput;
@@ -41,15 +37,7 @@ export class QueryBuilder<
   }
 
   filter(): this {
-    const {
-      searchTerm,
-      page,
-      limit,
-      sortBy,
-      sortOrder,
-      fields,
-      ...filterData
-    } = this.query;
+    const { searchTerm, page, limit, sortBy, sortOrder, fields, ...filterData } = this.query;
 
     if (Object.keys(filterData).length > 0) {
       const filterCondition = {
@@ -66,10 +54,14 @@ export class QueryBuilder<
     return this;
   }
 
-  sort(
-    defaultSortBy: string = "createdAt",
-    defaultSortOrder: "asc" | "desc" = "desc"
-  ): this {
+  advancedFilter(customFilters: Record<string, any>): this {
+    if (customFilters && Object.keys(customFilters).length > 0) {
+      this.whereConditions.push(customFilters as TWhereInput);
+    }
+    return this;
+  }
+
+  sort(defaultSortBy: string = 'createdAt', defaultSortOrder: 'asc' | 'desc' = 'desc'): this {
     const sortBy = this.query.sortBy || defaultSortBy;
     const sortOrder = this.query.sortOrder || defaultSortOrder;
 
@@ -84,13 +76,13 @@ export class QueryBuilder<
     const fields = this.query.fields;
 
     if (fields) {
-      const fieldArray = fields.split(",");
+      const fieldArray = fields.split(',');
       const select: Record<string, boolean> = {};
 
       fieldArray.forEach((field: string) => {
         const trimmedField = field.trim();
         // Basic validation - you can add more specific validation per model if needed
-        if (trimmedField && !trimmedField.includes(" ")) {
+        if (trimmedField && !trimmedField.includes(' ')) {
           select[trimmedField] = true;
         }
       });

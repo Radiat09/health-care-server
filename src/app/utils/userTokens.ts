@@ -1,10 +1,10 @@
-import { JwtPayload } from "jsonwebtoken";
-import { envVars } from "../config/env";
-import httpStatus from "http-status-codes";
-import { generateToken, verifyToken } from "./jwt";
-import { prisma } from "./prisma";
-import { AppError } from "../errorHerlpers/AppError";
-import { User, UserStatus } from "@prisma/client";
+import { User, UserStatus } from '@prisma/client';
+import httpStatus from 'http-status-codes';
+import { JwtPayload } from 'jsonwebtoken';
+import { envVars } from '../config/env';
+import { AppError } from '../errorHerlpers/AppError';
+import { generateToken, verifyToken } from './jwt';
+import { prisma } from './prisma';
 
 export const createUserTokens = (user: Partial<User>) => {
   const jwtPayload = {
@@ -16,39 +16,37 @@ export const createUserTokens = (user: Partial<User>) => {
   const accessToken = generateToken(
     jwtPayload,
     envVars.JWT_ACCESS_SECRET,
-    envVars.JWT_ACCESS_EXPIRES
+    envVars.JWT_ACCESS_EXPIRES,
   );
 
   const refreshToken = generateToken(
     jwtPayload,
     envVars.JWT_REFRESH_SECRET,
-    envVars.JWT_REFRESH_EXPIRES
+    envVars.JWT_REFRESH_EXPIRES,
   );
   return { accessToken, refreshToken };
 };
 
-export const createNewAccessTokenWithRefreshToken = async (
-  refreshToken: string
-) => {
-  const verifiedRefreshToken = verifyToken(
-    refreshToken,
-    envVars.JWT_REFRESH_SECRET
-  ) as JwtPayload;
+export const createNewAccessTokenWithRefreshToken = async (refreshToken: string) => {
+  const verifiedRefreshToken = verifyToken(refreshToken, envVars.JWT_REFRESH_SECRET) as JwtPayload;
 
   const isUserExist = await prisma.user.findUnique({
     where: {
-      email: verifiedRefreshToken.email,
+      id: verifiedRefreshToken.userId,
+      // email: verifiedRefreshToken.email,
+      status: UserStatus.ACTIVE,
     },
   });
 
   if (!isUserExist) {
-    throw new AppError(httpStatus.BAD_REQUEST, "User does not exist");
+    throw new AppError(httpStatus.BAD_REQUEST, 'User does not exist');
   }
+
   if (isUserExist.status === UserStatus.INACTIVE) {
     throw new AppError(httpStatus.BAD_REQUEST, `User is ${isUserExist.status}`);
   }
   if (isUserExist.status === UserStatus.DELETED) {
-    throw new AppError(httpStatus.BAD_REQUEST, "User does not exits anymore");
+    throw new AppError(httpStatus.BAD_REQUEST, 'User does not exits anymore');
   }
 
   const jwtPayload = {
@@ -59,7 +57,7 @@ export const createNewAccessTokenWithRefreshToken = async (
   const accessToken = generateToken(
     jwtPayload,
     envVars.JWT_ACCESS_SECRET,
-    envVars.JWT_ACCESS_EXPIRES
+    envVars.JWT_ACCESS_EXPIRES,
   );
 
   return accessToken;

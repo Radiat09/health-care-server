@@ -1,50 +1,14 @@
-import { envVars } from "../../config/env";
+import { Admin, Doctor, Patient, Prisma, PrismaClient, UserRole } from "@prisma/client";
 import bcrypt from "bcryptjs";
-import { prisma } from "../../utils/prisma";
 import { Request } from "express";
-import { AppError } from "../../errorHerlpers/AppError";
 import { deleteImageFromCloudinary } from "../../config/cloudinary.config";
-import { Admin, Doctor, Patient, Prisma, UserRole } from "@prisma/client";
-import { userSearchableFields } from "./user.constants";
-import { QueryBuilder } from "../../utils/QueryBuilder";
-import { PrismaClient } from "@prisma/client";
+import { envVars } from "../../config/env";
+import { AppError } from "../../errorHerlpers/AppError";
 import { BaseService, ModelName } from "../../utils/BaseService";
+import { prisma } from "../../utils/prisma";
+import { QueryBuilder } from "../../utils/QueryBuilder";
+import { userSearchableFields } from "./user.constants";
 
-// const createPatient = async (req: Request) => {
-//   const hashPassword = await bcrypt.hash(
-//     req.body?.password,
-//     Number(envVars.BCRYPT_SALT_ROUND)
-//   );
-
-//   if (req.file) {
-//     req.body.patient.profilePhoto = req.file?.path;
-//   }
-
-//   const result = await prisma.$transaction(async (tnx) => {
-//     // Validate if user already exists with same email/phone
-//     const existingUser = await tnx.user.findFirst({
-//       where: {
-//         OR: [{ email: req.body.patient.email }],
-//       },
-//     });
-
-//     if (existingUser) {
-//       throw new AppError(409, "User with this email already exists");
-//     }
-
-//     await tnx.user.create({
-//       data: {
-//         ...req.body.patient,
-//         password: hashPassword,
-//       },
-//     });
-
-//     return await tnx.patient.create({
-//       data: req.body.patient,
-//     });
-//   });
-//   return result;
-// };
 
 const createPatient = async (req: Request) => {
   const hashPassword = await bcrypt.hash(
@@ -299,7 +263,7 @@ export class RoleCreationService {
   constructor(
     private prisma: PrismaClient,
     private userService: UserServiceClass
-  ) {}
+  ) { }
 
   private async handleImageUpload(req: Request, dataField: string) {
     if (req.file) {
@@ -410,3 +374,7 @@ export class RoleCreationService {
     }
   }
 }
+
+
+export const userService = new UserServiceClass(prisma);
+export const roleCreationService = new RoleCreationService(prisma, userService);

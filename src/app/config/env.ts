@@ -19,6 +19,7 @@ interface EnvConfig {
   JWT_REFRESH_SECRET: string;
   SUPER_ADMIN_EMAIL: string;
   SUPER_ADMIN_PASSWORD: string;
+  OPENAI_API_KEY: string;
 }
 
 const loadEnvVariables = (): EnvConfig => {
@@ -36,6 +37,7 @@ const loadEnvVariables = (): EnvConfig => {
     "JWT_ACCESS_SECRET",
     "SUPER_ADMIN_EMAIL",
     "SUPER_ADMIN_PASSWORD",
+    "OPENAI_API_KEY",
   ];
 
   requiredEnvVariables.forEach((key) => {
@@ -60,6 +62,7 @@ const loadEnvVariables = (): EnvConfig => {
     JWT_ACCESS_SECRET: process.env.JWT_ACCESS_SECRET as string,
     SUPER_ADMIN_EMAIL: process.env.SUPER_ADMIN_EMAIL as string,
     SUPER_ADMIN_PASSWORD: process.env.SUPER_ADMIN_PASSWORD as string,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY as string,
   };
 };
 

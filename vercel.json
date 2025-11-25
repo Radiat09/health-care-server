@@ -6,9 +6,10 @@
       "use": "@vercel/node"
     }
   ],
-  "build": {
-    "env": {
-      "DOCKER_BUILDKIT": "1"
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/src/server.ts"
     }
-  }
+  ]
 }
