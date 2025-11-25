@@ -9,41 +9,6 @@ import { prisma } from "../../utils/prisma";
 import { QueryBuilder } from "../../utils/QueryBuilder";
 import { userSearchableFields } from "./user.constants";
 
-// const createPatient = async (req: Request) => {
-//   const hashPassword = await bcrypt.hash(
-//     req.body?.password,
-//     Number(envVars.BCRYPT_SALT_ROUND)
-//   );
-
-//   if (req.file) {
-//     req.body.patient.profilePhoto = req.file?.path;
-//   }
-
-//   const result = await prisma.$transaction(async (tnx) => {
-//     // Validate if user already exists with same email/phone
-//     const existingUser = await tnx.user.findFirst({
-//       where: {
-//         OR: [{ email: req.body.patient.email }],
-//       },
-//     });
-
-//     if (existingUser) {
-//       throw new AppError(409, "User with this email already exists");
-//     }
-
-//     await tnx.user.create({
-//       data: {
-//         ...req.body.patient,
-//         password: hashPassword,
-//       },
-//     });
-
-//     return await tnx.patient.create({
-//       data: req.body.patient,
-//     });
-//   });
-//   return result;
-// };
 
 const createPatient = async (req: Request) => {
   const hashPassword = await bcrypt.hash(
