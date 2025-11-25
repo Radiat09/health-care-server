@@ -6,18 +6,18 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=5000
-      - DATABASE_URL=postgresql://dev_user:dev_password@db:5432/health_care_db?schema=public
+      - DATABASE_URL=${DATABASE_URL}
       - BCRYPT_SALT_ROUND=12
-      - CLOUDINARY_CLOUD_NAME=dplddg9n4
-      - CLOUDINARY_API_KEY=715378115524821
-      - CLOUDINARY_API_SECRET=C0UR3otMql86a6HPC1vFYpfrJnY
-      - JWT_ACCESS_SECRET=access_secreet
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
       - JWT_ACCESS_EXPIRES=1d
-      - JWT_REFRESH_SECRET=JWTREFRESH_SECRET
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
       - JWT_REFRESH_EXPIRES=30d
-      - SUPER_ADMIN_EMAIL=radiat@rid.com
-      - SUPER_ADMIN_PASSWORD=Radiat@12345
-      - OPENAI_API_KEY=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
+      - SUPER_ADMIN_EMAIL=${SUPER_ADMIN_EMAIL}
+      - SUPER_ADMIN_PASSWORD=${SUPER_ADMIN_PASSWORD}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
     depends_on:
       db:
         condition: service_healthy
