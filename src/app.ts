@@ -4,9 +4,16 @@ import express, { Application, Request, Response } from 'express';
 import { envVars } from './app/config/env';
 import globalErrorHandler from './app/middlewares/globalErrorHandler';
 import notFound from './app/middlewares/notFound';
+import { PaymentController } from './app/modules/payment/payment.controller';
 import router from './app/routes';
 
 const app: Application = express();
+
+app.post(
+  "/webhook",
+  express.raw({ type: "application/json" }),
+  PaymentController.handleStripeWebhookEvent
+);
 
 // Body parsers FIRST
 app.use(express.json());
