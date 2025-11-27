@@ -3,9 +3,9 @@ import { NextFunction, Request, Response } from "express";
 import httpStatus from "http-status-codes";
 import { JwtPayload } from "jsonwebtoken";
 import { envVars } from "../config/env";
+import { prisma } from "../config/prisma";
 import { AppError } from "../errorHerlpers/AppError";
 import { verifyToken } from "../utils/jwt";
-import { prisma } from "../utils/prisma";
 
 export const checkAuth =
   (...authRoles: string[]) =>

@@ -1,6 +1,6 @@
 import { Specialities } from '@prisma/client';
 import { Request } from 'express';
-import { prisma } from '../../utils/prisma';
+import { prisma } from '../../config/prisma';
 
 const inserIntoDB = async (req: Request) => {
   const file = req.file;

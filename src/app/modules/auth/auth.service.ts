@@ -1,7 +1,7 @@
 import { UserStatus } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { prisma } from "../../config/prisma";
 import { AppError } from "../../errorHerlpers/AppError";
-import { prisma } from "../../utils/prisma";
 import { createUserTokens } from "../../utils/userTokens";
 
 const login = async (payload: { email: string; password: string }) => {

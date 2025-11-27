@@ -2,10 +2,10 @@ import { Doctor, Prisma, UserStatus } from "@prisma/client";
 import httpStatus from "http-status";
 import { envVars } from "../../config/env";
 import { openai } from "../../config/openAiRouter";
+import { prisma } from "../../config/prisma";
 import { AppError } from "../../errorHerlpers/AppError";
 import { extractJsonFromMessage } from "../../helpers/extractJsonFromMessage ";
 import { IOptions, paginationHelper } from "../../helpers/paginationHelper";
-import { prisma } from "../../utils/prisma";
 import { doctorSearchableFields } from "./doctor.constant";
 import { IDoctorUpdateInput } from "./doctor.interface";
 

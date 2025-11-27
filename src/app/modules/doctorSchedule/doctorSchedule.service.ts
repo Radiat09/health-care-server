@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { JwtPayload } from 'jsonwebtoken';
+import { prisma } from '../../config/prisma';
 import { BaseService } from '../../utils/BaseService';
-import { prisma } from '../../utils/prisma';
 
 class DoctorScheduleServiceClass extends BaseService<'doctorSchedules'> {
   constructor(prisma: PrismaClient) {

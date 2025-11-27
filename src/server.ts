@@ -1,7 +1,7 @@
 import { Server } from "http";
 import app from "./app";
 import { envVars } from "./app/config/env";
-import { connectDB } from "./app/utils/prisma";
+import { connectDB } from "./app/config/prisma";
 import { seedSuperAdmin } from "./app/utils/seedAdmin";
 
 async function bootstrap() {

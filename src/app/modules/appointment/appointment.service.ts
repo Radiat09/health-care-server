@@ -2,8 +2,8 @@ import { JwtPayload } from "jsonwebtoken";
 
 
 import { v4 as uuidv4 } from 'uuid';
+import { prisma } from "../../config/prisma";
 import { stripe } from "../../config/stripe";
-import { prisma } from "../../utils/prisma";
 
 const createAppointment = async (user: JwtPayload, payload: { doctorId: string, scheduleId: string }) => {
     const patientData = await prisma.patient.findUniqueOrThrow({

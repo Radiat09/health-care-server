@@ -1,6 +1,6 @@
 import { PaymentStatus } from "@prisma/client";
 import Stripe from "stripe";
-import { prisma } from "../../utils/prisma";
+import { prisma } from "../../config/prisma";
 
 
 const handleStripeWebhookEvent = async (event: Stripe.Event) => {

@@ -1,8 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 import { addHours, addMinutes, format } from 'date-fns';
 import { JwtPayload } from 'jsonwebtoken';
+import { prisma } from '../../config/prisma';
 import { BaseService } from '../../utils/BaseService';
-import { prisma } from '../../utils/prisma';
 
 export class ScheduleServiceClass extends BaseService<'schedule'> {
   constructor(prisma: PrismaClient) {

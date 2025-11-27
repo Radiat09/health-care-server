@@ -2,9 +2,9 @@ import { User, UserStatus } from '@prisma/client';
 import httpStatus from 'http-status-codes';
 import { JwtPayload } from 'jsonwebtoken';
 import { envVars } from '../config/env';
+import { prisma } from '../config/prisma';
 import { AppError } from '../errorHerlpers/AppError';
 import { generateToken, verifyToken } from './jwt';
-import { prisma } from './prisma';
 
 export const createUserTokens = (user: Partial<User>) => {
   const jwtPayload = {

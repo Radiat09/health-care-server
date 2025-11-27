@@ -3,9 +3,9 @@ import bcrypt from "bcryptjs";
 import { Request } from "express";
 import { deleteImageFromCloudinary } from "../../config/cloudinary.config";
 import { envVars } from "../../config/env";
+import { prisma } from "../../config/prisma";
 import { AppError } from "../../errorHerlpers/AppError";
 import { BaseService, ModelName } from "../../utils/BaseService";
-import { prisma } from "../../utils/prisma";
 import { QueryBuilder } from "../../utils/QueryBuilder";
 import { userSearchableFields } from "./user.constants";
 
