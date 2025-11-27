@@ -20,6 +20,7 @@ interface EnvConfig {
   SUPER_ADMIN_EMAIL: string;
   SUPER_ADMIN_PASSWORD: string;
   OPENAI_API_KEY: string;
+  STRIPE_SECRET_KEY: string;
 }
 
 const loadEnvVariables = (): EnvConfig => {
@@ -38,6 +39,7 @@ const loadEnvVariables = (): EnvConfig => {
     "SUPER_ADMIN_EMAIL",
     "SUPER_ADMIN_PASSWORD",
     "OPENAI_API_KEY",
+    "STRIPE_SECRET_KEY",
   ];
 
   requiredEnvVariables.forEach((key) => {
@@ -63,6 +65,7 @@ const loadEnvVariables = (): EnvConfig => {
     SUPER_ADMIN_EMAIL: process.env.SUPER_ADMIN_EMAIL as string,
     SUPER_ADMIN_PASSWORD: process.env.SUPER_ADMIN_PASSWORD as string,
     OPENAI_API_KEY: process.env.OPENAI_API_KEY as string,
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY as string,
   };
 };
 
