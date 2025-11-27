@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { Doctor, Prisma, UserStatus } from "@prisma/client";
 import httpStatus from "http-status";
 import { envVars } from "../../config/env";
 import { openai } from "../../config/openAiRouter";
@@ -84,62 +84,7 @@ const getAllFromDB = async (filters: any, options: IOptions) => {
     }
 }
 
-// const updateIntoDB = async (id: string, payload: Partial<IDoctorUpdateInput>) => {
-//     const doctorInfo = await prisma.doctor.findUniqueOrThrow({
-//         where: {
-//             id
-//         }
-//     });
 
-//     const { specialities, ...doctorData } = payload;
-
-//     return await prisma.$transaction(async (tnx) => {
-//         if (specialities && specialities.length > 0) {
-//             const deleteSpecialtyIds = specialities.filter((speciality) => speciality.isDeleted);
-
-//             for (const speciality of deleteSpecialtyIds) {
-//                 await tnx.doctorSpecialities.deleteMany({
-//                     where: {
-//                         doctorId: id,
-//                         specialitiesId: speciality.specialityId
-//                     }
-//                 })
-//             }
-
-//             const createSpecialtyIds = specialities.filter((specialty) => !specialty.isDeleted);
-
-//             for (const speciality of createSpecialtyIds) {
-//                 await tnx.doctorSpecialities.create({
-//                     data: {
-//                         doctorId: id,
-//                         specialitiesId: speciality.specialityId
-//                     }
-//                 })
-//             }
-
-//         }
-
-//         const updatedData = await tnx.doctor.update({
-//             where: {
-//                 id: doctorInfo.id
-//             },
-//             data: doctorData,
-//             include: {
-//                 doctorSpecialities: {
-//                     include: {
-//                         specialities: true
-//                     }
-//                 }
-//             }
-
-//             //  doctor - doctorSpecailties - specialities 
-//         })
-
-//         return updatedData
-//     })
-
-
-// }
 const updateIntoDB = async (id: string, payload: Partial<IDoctorUpdateInput>) => {
     const doctorInfo = await prisma.doctor.findUniqueOrThrow({
         where: { id }
@@ -195,6 +140,69 @@ const updateIntoDB = async (id: string, payload: Partial<IDoctorUpdateInput>) =>
     });
 };
 
+const getByIdFromDB = async (id: string): Promise<Doctor | null> => {
+    const result = await prisma.doctor.findUnique({
+        where: {
+            id,
+            isDeleted: false,
+        },
+        include: {
+            doctorSpecialities: {
+                include: {
+                    specialities: true,
+                },
+            },
+            doctorSchedules: {
+                include: {
+                    schedule: true
+                }
+            }
+        },
+    });
+    return result;
+};
+
+const deleteFromDB = async (id: string): Promise<Doctor> => {
+    return await prisma.$transaction(async (transactionClient) => {
+        const deleteDoctor = await transactionClient.doctor.delete({
+            where: {
+                id,
+            },
+        });
+
+        await transactionClient.user.delete({
+            where: {
+                email: deleteDoctor.email,
+            },
+        });
+
+        return deleteDoctor;
+    });
+};
+
+const softDelete = async (id: string): Promise<Doctor> => {
+    return await prisma.$transaction(async (transactionClient) => {
+        const deleteDoctor = await transactionClient.doctor.update({
+            where: { id },
+            data: {
+                isDeleted: true,
+            },
+        });
+
+        await transactionClient.user.update({
+            where: {
+                email: deleteDoctor.email,
+            },
+            data: {
+                status: UserStatus.DELETED,
+            },
+        });
+
+        return deleteDoctor;
+    });
+};
+
+
 const getAISuggestions = async (payload: { symptoms: string }) => {
     if (!(payload && payload.symptoms)) {
         throw new AppError(httpStatus.BAD_REQUEST, "symptoms is required!")
@@ -248,5 +256,8 @@ Return your response in JSON format with full individual doctor data.
 export const DoctorService = {
     getAllFromDB,
     updateIntoDB,
+    getByIdFromDB,
+    deleteFromDB,
+    softDelete,
     getAISuggestions
 }
