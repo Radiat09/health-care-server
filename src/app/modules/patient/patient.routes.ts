@@ -1,4 +1,6 @@
+import { UserRole } from '@prisma/client';
 import express from 'express';
+import { checkAuth } from '../../middlewares/checkAuth';
 import { PatientController } from './patient.controller';
 
 const router = express.Router();
@@ -11,6 +13,12 @@ router.get(
 router.get(
     '/:id',
     PatientController.getByIdFromDB
+);
+
+router.patch(
+    '/',
+    checkAuth(UserRole.PATIENT),
+    PatientController.updateIntoDB
 );
 
 router.delete(
