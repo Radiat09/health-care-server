@@ -4,6 +4,12 @@ import { checkAuth } from '../../middlewares/checkAuth';
 import { PrescriptionController } from './prescription.controller';
 const router = express.Router();
 
+router.get(
+    '/my-prescription',
+    checkAuth(UserRole.PATIENT),
+    PrescriptionController.patientPrescription
+)
+
 
 router.post(
     "/",
