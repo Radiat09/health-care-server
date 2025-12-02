@@ -1,6 +1,7 @@
-import { Admin, Doctor, Patient, Prisma, PrismaClient, UserRole } from "@prisma/client";
+import { Admin, Doctor, Patient, Prisma, PrismaClient, UserRole, UserStatus } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { Request } from "express";
+import { JwtPayload } from "jsonwebtoken";
 import { deleteImageFromCloudinary } from "../../config/cloudinary.config";
 import { envVars } from "../../config/env";
 import { prisma } from "../../config/prisma";
@@ -127,64 +128,6 @@ const createDoctor = async (req: Request): Promise<Doctor> => {
   return result;
 };
 
-// const getAllFromDB = async (params: any, options: IOptions) => {
-//   const { page, limit, skip, sortBy, sortOrder } =
-//     paginationHelper.calculatePagination(options);
-//   const { searchTerm, ...filterData } = params;
-
-//   const andConditions: Prisma.UserWhereInput[] = [];
-
-//   if (searchTerm) {
-//     andConditions.push({
-//       OR: userSearchableFields.map((field) => ({
-//         [field]: {
-//           contains: searchTerm,
-//           mode: "insensitive",
-//         },
-//       })),
-//     });
-//   }
-
-//   if (Object.keys(filterData).length > 0) {
-//     andConditions.push({
-//       AND: Object.keys(filterData).map((key) => ({
-//         [key]: {
-//           equals: (filterData as any)[key],
-//         },
-//       })),
-//     });
-//   }
-
-//   const whereConditions: Prisma.UserWhereInput =
-//     andConditions.length > 0
-//       ? {
-//           AND: andConditions,
-//         }
-//       : {};
-
-//   const result = await prisma.user.findMany({
-//     skip,
-//     take: limit,
-
-//     where: whereConditions,
-//     orderBy: {
-//       [sortBy]: sortOrder,
-//     },
-//   });
-
-//   const total = await prisma.user.count({
-//     where: whereConditions,
-//   });
-//   return {
-//     meta: {
-//       page,
-//       limit,
-//       total,
-//     },
-//     data: result,
-//   };
-// };
-
 const getAllFromDB = async (query: any) => {
   const queryBuilder = new QueryBuilder<
     typeof prisma.user,
@@ -208,11 +151,78 @@ const getAllFromDB = async (query: any) => {
     data,
   };
 };
+
+
+const getMyProfile = async (user: JwtPayload) => {
+  const userInfo = await prisma.user.findUniqueOrThrow({
+    where: {
+      email: user.email,
+      status: UserStatus.ACTIVE
+    },
+    select: {
+      id: true,
+      email: true,
+      needPasswordChange: true,
+      role: true,
+      status: true
+    }
+  })
+
+  let profileData;
+
+  if (userInfo.role === UserRole.PATIENT) {
+    profileData = await prisma.patient.findUnique({
+      where: {
+        email: userInfo.email
+      }
+    })
+  }
+  else if (userInfo.role === UserRole.DOCTOR) {
+    profileData = await prisma.doctor.findUnique({
+      where: {
+        email: userInfo.email
+      }
+    })
+  }
+  else if (userInfo.role === UserRole.ADMIN) {
+    profileData = await prisma.admin.findUnique({
+      where: {
+        email: userInfo.email
+      }
+    })
+  }
+
+  return {
+    ...userInfo,
+    ...profileData
+  };
+
+};
+
+const changeProfileStatus = async (id: string, payload: { status: UserStatus }) => {
+  const userData = await prisma.user.findUniqueOrThrow({
+    where: {
+      id
+    }
+  })
+
+  const updateUserStatus = await prisma.user.update({
+    where: {
+      id
+    },
+    data: payload
+  })
+
+  return updateUserStatus;
+};
+
 export const UserService = {
   createPatient,
   createAdmin,
   createDoctor,
   getAllFromDB,
+  getMyProfile,
+  changeProfileStatus
 };
 
 //User Service Class using BaseService

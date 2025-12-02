@@ -1,8 +1,9 @@
 import { Admin, Doctor, UserRole } from '@prisma/client';
 import { Request, Response } from 'express';
+import httpStatus from 'http-status';
 import catchAsync from '../../utils/catchAsync';
 import sendResponse from '../../utils/sendResponse';
-import { roleCreationService, userService } from './user.service';
+import { roleCreationService, UserService, userService } from './user.service';
 
 const createPatient = catchAsync(async (req: Request, res: Response) => {
   const patient = await roleCreationService.createPatient(req);
@@ -61,9 +62,39 @@ const getAllFromDB = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+
+const getMyProfile = catchAsync(async (req: Request, res: Response) => {
+
+  const user = req.user;
+
+  const result = await UserService.getMyProfile(user);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "My profile data fetched!",
+    data: result
+  })
+});
+
+const changeProfileStatus = catchAsync(async (req: Request, res: Response) => {
+
+  const { id } = req.params;
+  const result = await UserService.changeProfileStatus(id, req.body)
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Users profile status changed!",
+    data: result
+  })
+});
+
 export const UserController = {
   createPatient,
   createAdmin,
   createDoctor,
   getAllFromDB,
+  getMyProfile,
+  changeProfileStatus
 };
