@@ -8,7 +8,6 @@ import { generateToken, verifyToken } from './jwt';
 
 export const createUserTokens = (user: Partial<User>) => {
   const jwtPayload = {
-    userId: user.id,
     email: user.email,
     role: user.role,
   };
@@ -50,7 +49,6 @@ export const createNewAccessTokenWithRefreshToken = async (refreshToken: string)
   }
 
   const jwtPayload = {
-    userId: isUserExist.id,
     email: isUserExist.email,
     role: isUserExist.role,
   };
@@ -60,5 +58,8 @@ export const createNewAccessTokenWithRefreshToken = async (refreshToken: string)
     envVars.JWT_ACCESS_EXPIRES,
   );
 
-  return accessToken;
+  return {
+    accessToken,
+    needPasswordChange: isUserExist.needPasswordChange
+  };
 };

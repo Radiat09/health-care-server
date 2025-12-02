@@ -21,6 +21,14 @@ interface EnvConfig {
   SUPER_ADMIN_PASSWORD: string;
   OPENAI_API_KEY: string;
   STRIPE_SECRET_KEY: string;
+  FRONTEND_URL: string;
+  EMAIL_SENDER: {
+    SMTP_USER: string;
+    SMTP_PASS: string;
+    SMTP_PORT: string;
+    SMTP_HOST: string;
+    SMTP_FROM: string;
+  };
 }
 
 const loadEnvVariables = (): EnvConfig => {
@@ -40,6 +48,13 @@ const loadEnvVariables = (): EnvConfig => {
     "SUPER_ADMIN_PASSWORD",
     "OPENAI_API_KEY",
     "STRIPE_SECRET_KEY",
+    "FRONTEND_URL",
+    "SMTP_PASS",
+    "SMTP_PORT",
+    "SMTP_HOST",
+    "SMTP_USER",
+    "SMTP_FROM",
+
   ];
 
   requiredEnvVariables.forEach((key) => {
@@ -66,6 +81,14 @@ const loadEnvVariables = (): EnvConfig => {
     SUPER_ADMIN_PASSWORD: process.env.SUPER_ADMIN_PASSWORD as string,
     OPENAI_API_KEY: process.env.OPENAI_API_KEY as string,
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY as string,
+    FRONTEND_URL: process.env.FRONTEND_URL as string,
+    EMAIL_SENDER: {
+      SMTP_USER: process.env.SMTP_USER as string,
+      SMTP_PASS: process.env.SMTP_PASS as string,
+      SMTP_PORT: process.env.SMTP_PORT as string,
+      SMTP_HOST: process.env.SMTP_HOST as string,
+      SMTP_FROM: process.env.SMTP_FROM as string,
+    },
   };
 };
 
