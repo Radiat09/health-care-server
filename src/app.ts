@@ -1,9 +1,12 @@
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express, { Application, Request, Response } from 'express';
+import cron from "node-cron";
 import { envVars } from './app/config/env';
+import { AppError } from './app/errorHerlpers/AppError';
 import globalErrorHandler from './app/middlewares/globalErrorHandler';
 import notFound from './app/middlewares/notFound';
+import { AppointmentService } from './app/modules/appointment/appointment.service';
 import { PaymentController } from './app/modules/payment/payment.controller';
 import router from './app/routes';
 
@@ -27,6 +30,16 @@ app.use(
     credentials: true,
   }),
 );
+
+cron.schedule("* * * * *", async () => {
+  try {
+    console.log("Node cron called at", new Date());
+    AppointmentService.cancelUnpaidAppointments();
+  } catch (error) {
+    console.error(error);
+    throw new AppError(500, "Failed to cancel unpaid appointments");
+  }
+})
 
 // Routes last
 app.use('/api/v1', router);
